@@ -3,6 +3,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath, URL } from 'node:url';
 import { resolve } from 'path';
 
+const dev = "http://100.122.55.74:3000"
+
 export default defineConfig({  
   plugins: [
     tailwindcss(),
@@ -18,7 +20,7 @@ export default defineConfig({
     host:true,
     proxy: {
       '/queue-api': {
-        target: 'http://127.0.0.1:3000',
+        target: 'https://supersecretescaperoomadminconsole.njcfuntasia.com/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/queue-api/, '/api'),
       },
