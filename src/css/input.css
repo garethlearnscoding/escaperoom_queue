@@ -3,7 +3,7 @@
 @plugin "@tailwindcss/container-queries";
 
 @import "@catppuccin/tailwindcss/mocha.css";
-@import "./modal.css";
+
 
 @utility hide-scrollbar {
   &::-webkit-scrollbar {

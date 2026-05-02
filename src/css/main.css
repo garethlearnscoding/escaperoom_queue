@@ -1,10 +1,6 @@
 /* =============================================================
-   main.css — Map page styles
-   Follows DESIGN.md: Catppuccin editorial design system
-   - No 1px borders (§2 "No-Line" Rule)
-   - Tonal layering, not drop-shadows (§4)
-   - Glassmorphism for floating elements (§2 "Glass & Gradient")
-   - xl (1.5rem) roundedness (§5)
+   main.css — Escape Room Queue (standalone page)
+   Catppuccin design system
    ============================================================= */
 @import "@catppuccin/tailwindcss/mocha.css";
 
@@ -12,16 +8,12 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
 }
 
 body {
@@ -29,366 +21,173 @@ body {
   font-family: "JetBrains Mono", monospace;
   color: var(--color-ctp-text);
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-#canvas-container {
-  width: 100vw;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  overflow: hidden;
-}
-
-#canvas-container canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* === Bottom Sheet (Floating — Glassmorphism per §2) === */
-#bottom-sheet {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+/* === Full-Screen Queue Container === */
+.queue-container {
   width: 100%;
-  background: var(--color-ctp-surface0);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: var(--color-ctp-text);
-  padding: 24px 20px;
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
-  border-top-left-radius: 1.5rem;
-  border-top-right-radius: 1.5rem;
-  /* Ambient shadow (§4) */
-  box-shadow: 0 -8px 48px color-mix(in srgb, var(--color-ctp-text) 6%, transparent);
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.3s ease;
-  z-index: 10001;
-  max-height: 60vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  pointer-events: auto;
-  touch-action: pan-y; /* Allow vertical panning for the sheet */
-  will-change: transform;
-}
-
-#bottom-sheet.shifting {
-  transition: none !important;
-  /* Disable expensive backdrop-filter during real-time movement for smoothness */
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  /* Use a slightly more opaque background to compensate for lost blur */
-  background: var(--color-ctp-surface1) !important;
-}
-
-#sheet-handle {
-  width: 40px;
-  height: 4px;
-  @apply bg-ctp-text;
-  border-radius: 2px;
-  margin: 12px auto 0;
-  cursor: grab;
-  flex-shrink: 0;
-}
-
-#bottom-sheet.show {
-  transform: translateY(0);
-}
-
-#bottom-sheet h2 {
-  margin: 0 0 12px;
-  margin-right: 40px;
-  color: var(--color-ctp-mauve);
-  font-size: 1.5em;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-#bottom-sheet p {
-  margin: 0;
-  font-size: 1em;
-  color: var(--color-ctp-subtext1);
-  line-height: 1.5;
-}
-
-@media (max-width: 768px) {
-  #bottom-sheet {
-    padding: 20px 16px;
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
-    max-height: 70vh;
-    border-top-left-radius: 1.5rem;
-    border-top-right-radius: 1.5rem;
-  }
-
-  #bottom-sheet h2 {
-    font-size: 1.3em;
-    margin-bottom: 10px;
-  }
-
-  #bottom-sheet p {
-    font-size: 0.95em;
-  }
-}
-
-/* === Close Button === */
-#close-btn {
-  position: absolute;
-  right: 20px;
-  top: 20px;
-  background: none;
-  border: none;
-  color: var(--color-ctp-text);
-  font-size: 1.8em;
-  cursor: pointer;
-  transition: color 0.2s, background 0.2s;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  pointer-events: auto;
-  z-index: 10002;
-}
-
-#close-btn:hover,
-#close-btn:active {
-  color: var(--color-ctp-mauve);
-  background: color-mix(in srgb, var(--color-ctp-mauve) 10%, transparent);
-}
-
-@media (max-width: 768px) {
-  #close-btn {
-    right: 16px;
-    top: 16px;
-    width: 40px;
-    height: 40px;
-    font-size: 2em;
-  }
-}
-
-/* === Enter and Exit Child Buttons === */
-#enter-child-btn, #lt5-event-btn, #o2-event-btn {
-  display:none; 
-  width:100%; 
-  padding: 14px; 
-  margin-top: 20px; 
-  border-radius: 12px; 
-  font-weight: 700; 
-  font-family: 'JetBrains Mono', monospace; 
-  font-size: 14px; 
-  border: 1px solid color-mix(in srgb, var(--color-ctp-mauve) 30%, transparent); 
-  cursor: pointer; 
-  transition: background 0.2s;
-}
-#enter-child-btn:active, #lt5-event-btn:active, #o2-event-btn:active {
-  background: color-mix(in srgb, var(--color-ctp-mauve) 10%, transparent);
-}
-
-
-/* === Floor Selector UI (Floating — Glassmorphism per §2) === */
-#floor-selector {
-  position: fixed;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  z-index: 10;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: var(--color-ctp-surface0);
-  color: var(--color-ctp-text);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 8px;
-  border-radius: 1.5rem;
-  /* Ambient shadow (§4) */
-  box-shadow: 0 8px 40px color-mix(in srgb, var(--color-ctp-text) 6%, transparent);
-  touch-action: none;
-  user-select: none;
-  transition: background 0.3s ease;
+  align-items: center;
 }
 
-/* Floor thumb — Solid CTA (§2 update) */
-#floor-thumb {
-  position: absolute;
-  left: 8px;
-  width: 40px;
-  height: 40px;
-  background: var(--color-ctp-mauve-600);
-  border-radius: 50%;
-  z-index: -1;
-  opacity: 0;
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1),
-              top 0.15s cubic-bezier(0.2, 0, 0, 1),
-              opacity 0.3s ease,
-              background 0.3s ease;
-  /* Ambient glow */
-  box-shadow: 0 4px 24px color-mix(in srgb, var(--color-ctp-mauve) 25%, transparent);
-}
-
-.floor-btn {
-  background: transparent;
-  border: none;
-  color: var(--color-ctp-text);
-  padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 13px;
-  font-weight: 600;
-  transition: color 0.15s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  width: 40px;
-  height: 40px;
+.queue-header {
+  width: 100%;
+  margin-bottom: 1.5rem;
   text-align: center;
+}
+
+.queue-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-ctp-mauve);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem;
+}
+
+.queue-header p {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-ctp-subtext1);
+  margin: 0;
+}
+
+.queue-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* === Utility Overrides === */
+.hidden { display: none !important; }
+.flex { display: flex !important; }
+
+/* === Queue Screens === */
+.queue-screen {
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+}
+
+.queue-screen.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* === QR Scanner === */
+.qr-scanner-container {
+  width: 220px;
+  height: 220px;
+  border: 2px dashed color-mix(in srgb, var(--color-ctp-mauve) 50%, transparent);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  background: var(--color-ctp-surface0);
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
 }
 
-.floor-btn.active {
+.qr-scanner-container video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 14px !important;
+}
+
+#queue_qrcode_scanner video {
+  object-fit: cover !important;
+}
+
+/* === Queue Buttons === */
+.queue-action-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--color-ctp-mauve);
   color: var(--color-ctp-base);
-}
-
-@media (max-width: 768px) {
-  #floor-selector {
-    right: 10px;
-    padding: 6px;
-    gap: 4px;
-  }
-
-  #floor-thumb {
-    left: 6px;
-    width: 36px;
-    height: 36px;
-  }
-
-  .floor-btn {
-    font-size: 12px;
-    width: 36px;
-    height: 36px;
-  }
-}
-
-/* Adjust info position when floor selector is present */
-#info {
-  max-width: calc(100vw - 140px);
-}
-
-@media (max-width: 768px) {
-  #info {
-    max-width: calc(100vw - 100px);
-  }
-}
-
-/* === FAB Buttons (Floating Action Buttons) === */
-.fab-btn {
-  position: fixed;
-  z-index: 9999;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
+  font-weight: 700;
+  font-size: 14px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 6px;
-  @apply bg-ctp-mauve text-ctp-base;
-  /* Ambient shadow (§4) */
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-ctp-text) 12%, transparent);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
-}
-
-.fab-btn:active {
-  transform: scale(0.92);
-}
-
-.fab-btn span {
-  font-size: 24px;
-}
-
-#open-directory-btn {
-  bottom: 20px;
-  right: 16px;
-}
-
-#open-settings-btn {
-  bottom: 74px;
-  right: 16px;
-}
-
-#open-qr-btn {
-  bottom: 128px;
-  right: 16px;
-}
-
-#open-info-btn {
-  top: 20px;
-  right: 16px;
-}
-
-#open-events-btn {
-  top: 74px;
-  right: 16px
-}
-
-#open-queue-btn {
-  top: 128px;
-  right: 16px
-}
-
-#clear-directory-marker-btn {
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   cursor: pointer;
-  z-index: 10000;
-  transform: translateX(-50%);
-  padding: 12px;
-  font-weight: bold;
-  font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  border-radius: 24px; 
+  transition: background 0.2s;
+  border: none;
+  font-family: "JetBrains Mono", monospace;
 }
 
-#exit-child-btn {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  align-items: center;
+.queue-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.queue-leave-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ctp-red);
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
   justify-content: center;
+  align-items: center;
   gap: 8px;
   cursor: pointer;
-  z-index: 200;
-  transform: translateX(-50%);
-  padding: 12px;
-  font-weight: bold;
-  font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  border-radius: 24px; 
+  transition: background 0.2s;
+  border: 1px solid var(--color-ctp-red);
+  font-family: "JetBrains Mono", monospace;
 }
 
-/* === Toast Notification (Greyish Blue §2 update) === */
+/* === Queue Input === */
+.queue-name-input {
+  width: 100%;
+  padding: 14px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 2px solid var(--color-ctp-mauve-950);
+  background: var(--color-ctp-surface0);
+  color: var(--color-ctp-mauve);
+  outline: none;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* === Queue Typography === */
+.queue-countdown {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.queue-error-text {
+  color: var(--color-ctp-red);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 18px;
+}
+
+/* === Toast Notification === */
 .toast {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: color-mix(in srgb, var(--color-toast-brand) 30%, var(--color-surface-container-high));
+  background: color-mix(in srgb, var(--color-ctp-mauve) 20%, var(--color-ctp-surface0));
   color: var(--color-ctp-text);
   padding: 12px 24px;
   border-radius: 1.5rem;
@@ -397,7 +196,6 @@ body {
   font-weight: 500;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  /* Ambient tinted shadow */
   box-shadow: 0 8px 40px color-mix(in srgb, var(--color-ctp-text) 10%, transparent);
   z-index: 1000;
   opacity: 0;
@@ -413,184 +211,7 @@ body {
   opacity: 1;
 }
 
-.toggle-selector-container {
-  display: flex; 
-  width: 100%; 
-  background: var(--color-ctp-surface0); 
-  padding: 6px; 
-  border-radius: 12px; 
-  margin-bottom: 32px; 
-  border: 1px solid var(--color-ctp-surface0);
-}
-
-@media (max-width: 365px) { /* 480px is smallest for events tab to not break */
-  .toggle-selector-container {
-    flex-direction: column;
-  }
-}
-
-.toggle-selector {
-  flex: 1; 
-  padding: 10px; 
-  border-radius: 8px; 
-  font-weight: 600; 
-  font-size: 13px; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  gap: 8px; 
-  background: transparent; 
-  color: var(--color-ctp-text); 
-  border: none; 
-  transition: all 0.2s;
-}
-
-#qr-scanner-view {
-  width: 100%; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center;
-}
-
-#qr-scanner-view p {
-  font-size: 11px; 
-  font-weight: 700; 
-  text-transform: uppercase; 
-  letter-spacing: 0.1em; 
-  color: var(--color-ctp-text); 
-  margin-bottom: 12px;
-}
-
-.qr-scanner-container {
-  width: 220px; 
-  height: 220px; 
-  border: 2px dashed color-mix(in srgb, var(--color-ctp-mauve) 50%, transparent); 
-  border-radius: 16px; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  background: var(--color-ctp-surface0); 
-  box-shadow: var(--color-ctp-surface0); 
-  margin-bottom: 24px; 
-  overflow: hidden; 
-  position: relative;
-}
-
-.qr-scanner-container video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: 14px !important;
-}
-
-
-.qr-code-input {
-  width: 72px; 
-  height: 56px; 
-  text-align: center; 
-  font-size: 24px; 
-  font-weight: 700; 
-  border-radius: 10px; 
-  border: 2px solid var(--color-ctp-mauve-950); 
-  background: var(--color-ctp-surface0); 
-  color: var(--color-ctp-mauve); 
-  outline: none;
-}
-
-#qr-go-btn {
-  width: 100%; 
-  max-width: 300px; 
-  padding: 14px; 
-  border-radius: 12px; 
-  background: var(--color-ctp-surface0); 
-  color: var(--color-ctp-mauve); 
-  font-weight: 700; 
-  font-size: 14px; 
-  border: 1px solid var(--color-ctp-mauve-950); 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  gap: 8px; 
-  cursor: pointer; 
-  transition: background 0.2s;
-}
-
-/* === Queue Modal Specific Styles === */
-.queue-screen {
-  display: none;
-}
-.queue-screen.active {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-.queue-action-btn {
-  width: 100%; 
-  padding: 14px; 
-  border-radius: 12px; 
-  background: var(--color-ctp-mauve);
-  color: var(--color-ctp-base); 
-  font-weight: 700; 
-  font-size: 14px; 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  gap: 8px; 
-  cursor: pointer; 
-  transition: background 0.2s;
-  border: none;
-}
-.queue-action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.queue-leave-btn {
-  width: 100%; 
-  padding: 14px; 
-  border-radius: 12px; 
-  background: transparent;
-  color: var(--color-ctp-red); 
-  font-weight: 700; 
-  font-size: 14px; 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  gap: 8px; 
-  cursor: pointer; 
-  transition: background 0.2s;
-  border: 1px solid var(--color-ctp-red);
-}
-.queue-name-input {
-  width: 100%; 
-  padding: 14px;
-  text-align: center; 
-  font-size: 18px; 
-  font-weight: 700; 
-  border-radius: 12px; 
-  border: 2px solid var(--color-ctp-mauve-950); 
-  background: var(--color-ctp-surface0); 
-  color: var(--color-ctp-mauve); 
-  outline: none;
-  font-family: "JetBrains Mono", monospace;
-}
-.queue-position {
-  font-size: 64px;
-  font-weight: 700;
-  line-height: 1;
-}
-.queue-countdown {
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 1;
-  font-family: "JetBrains Mono", monospace;
-}
-.queue-error-text {
-  color: var(--color-ctp-red);
-  font-size: 12px;
-  font-weight: 600;
-  min-height: 18px;
-}
+/* === Animations === */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
