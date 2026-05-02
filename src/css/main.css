@@ -480,25 +480,9 @@ body {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
-  border-radius: 16px !important;
+  border-radius: 14px !important;
 }
 
-.qr-flash-btn {
-  width: 100%; 
-  max-width: 300px; 
-  padding: 14px; 
-  border-radius: 12px; 
-  background: var(--color-ctp-mauve-950);
-  color: var(--color-ctp-base); 
-  font-weight: 700; 
-  font-size: 14px; 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  gap: 8px; 
-  cursor: pointer; 
-  transition: background 0.2s;
-}
 
 .qr-code-input {
   width: 72px; 
@@ -606,4 +590,8 @@ body {
   font-size: 12px;
   font-weight: 600;
   min-height: 18px;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

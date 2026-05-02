@@ -18,7 +18,7 @@
         .hidden { display: none !important; }
         .flex { display: flex !important; }
         .queue-screen { width: 100%; flex-direction: column; align-items: center; }
-        #queue_qrcode_scanner { width: 100%; max-width: 320px; min-height: 250px; background: var(--color-ctp-surface0); border-radius: 12px; overflow: hidden; margin: 0 auto; }
+        /* #queue_qrcode_scanner { width: 100%; max-width: 320px; min-height: 250px; background: var(--color-ctp-surface0); border-radius: 12px; overflow: hidden; margin: 0 auto; } */
         #queue_qrcode_scanner video { object-fit: cover !important; }
     </style>
 </head>
@@ -60,9 +60,10 @@
                         <span class="material-symbols-outlined">arrow_back</span> Back
                     </button>
                     <div id="queue_qrcode_scanner" class="qr-scanner-container mx-auto"></div>
-                    <button id="queue-qr-flash-btn" class="qr-flash-btn mt-4">
-                        <span class="material-symbols-outlined text-[20px]" id="queue-qr-flash-icon">flashlight_off</span> Toggle Flash
-                    </button>
+                    <div id="queue-camera-loading" class="hidden items-center justify-center gap-3 text-ctp-mauve mt-6">
+                        <span class="material-symbols-outlined animate-[spin_2s_ease-in-out_infinite] text-[28px]">hourglass_empty</span>
+                        <span class="font-bold text-lg">Fetching Camera</span>
+                    </div>
                     <p id="queue-scan-error" class="queue-error-text mt-4 text-center"></p>
                 </div>
 

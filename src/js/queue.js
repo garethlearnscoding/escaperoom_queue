@@ -11,11 +11,26 @@ let qValidityInterval = null;
 
 // Standalone Scanner Logic (Embedded to remove imports)
 let html5QrCode = null;
-let torchOn = false;
 let isScannerStarting = false;
 
 async function startScanner(successCallback, elementId) {
-    if (isScannerStarting || (html5QrCode && html5QrCode.isScanning)) return;
+    if (isScannerStarting || (html5QrCode && html5QrCode.isScanning)) {
+        if (html5QrCode && html5QrCode.isScanning) {
+            const loadingEl = document.getElementById('queue-camera-loading');
+            if (loadingEl) {
+                loadingEl.classList.add('hidden');
+                loadingEl.classList.remove('flex');
+            }
+        }
+        return;
+    }
+    
+    const loadingEl = document.getElementById('queue-camera-loading');
+    if (loadingEl) {
+        loadingEl.classList.remove('hidden');
+        loadingEl.classList.add('flex');
+    }
+    
     isScannerStarting = true;
 
     try {
@@ -27,8 +42,16 @@ async function startScanner(successCallback, elementId) {
             { fps: 20, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
             (text) => successCallback(text)
         );
+        if (loadingEl) {
+            loadingEl.classList.add('hidden');
+            loadingEl.classList.remove('flex');
+        }
     } catch (err) {
         console.error("Scanner error:", err);
+        if (loadingEl) {
+            loadingEl.classList.add('hidden');
+            loadingEl.classList.remove('flex');
+        }
         const errEl = document.getElementById('queue-scan-error');
         if (errEl) errEl.textContent = "Camera error. Please ensure permissions are granted.";
     } finally {
@@ -42,22 +65,11 @@ async function stopScanner() {
             await html5QrCode.stop();
         } catch (e) { console.error("Stop error", e); }
     }
-    torchOn = false;
-    const flashIcon = document.getElementById('queue-qr-flash-icon');
-    if (flashIcon) flashIcon.textContent = 'flashlight_off';
-}
-
-async function toggleTorch(btn) {
-    if (!html5QrCode || !html5QrCode.isScanning) return;
-    try {
-        const video = document.querySelector('#queue_qrcode_scanner video');
-        const track = video?.srcObject?.getVideoTracks()[0];
-        if (!track) return;
-        torchOn = !torchOn;
-        await track.applyConstraints({ advanced: [{ torch: torchOn }] });
-        const icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = torchOn ? 'flashlight_on' : 'flashlight_off';
-    } catch (e) { console.warn("Torch not supported", e); }
+    const loadingEl = document.getElementById('queue-camera-loading');
+    if (loadingEl) {
+        loadingEl.classList.add('hidden');
+        loadingEl.classList.remove('flex');
+    }
 }
 
 const UI = {
@@ -251,8 +263,6 @@ document.getElementById('queue-scan-btn').addEventListener('click', async () => 
     await showScreen('scanner');
     await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
 });
-
-document.getElementById('queue-qr-flash-btn').addEventListener('click', (e) => toggleTorch(e.currentTarget, 'queue_qrcode_scanner'));
 
 document.getElementById('queue-back-to-instructions-btn').addEventListener('click', async () => {
     await stopScanner();
