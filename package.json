@@ -1,4 +1,13 @@
 {
+  "name": "escaperoom-queue-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+  },
   "devDependencies": {
     "@catppuccin/tailwindcss": "^1.0.0",
     "@tailwindcss/container-queries": "^0.1.1",
