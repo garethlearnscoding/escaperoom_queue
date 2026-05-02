@@ -131,7 +131,7 @@ async function showScreen(name) {
 
 async function pollGeneral() {
     try {
-        const res = await fetch(`/queue-api/queue?t=${Date.now()}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/queue?t=${Date.now()}`);
         const data = await res.json();
         document.getElementById('queue-info-grid').classList.remove('hidden');
         document.getElementById('queue-info-people').textContent = data.total;
@@ -153,7 +153,7 @@ function stopGeneralPolling() {
 
 async function poll(id) {
     try {
-        const res = await fetch(`/queue-api/status?id=${id}&t=${Date.now()}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/status?id=${id}&t=${Date.now()}`);
         if (res.status === 404) {
             stopPolling();
             localStorage.clear();
@@ -277,7 +277,7 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
     btn.disabled = true;
     
     try {
-        const res = await fetch(`/queue-api/join`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/join`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: currentToken, name }),
@@ -297,7 +297,7 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
 const leaveHandler = async () => {
     if (confirm("Leave the queue?")) {
         const id = localStorage.getItem("q_id");
-        await fetch(`/queue-api/leave?id=${id}`, { method: "POST" }).catch(() => {});
+        await fetch(`${import.meta.env.VITE_API_BASE}/leave?id=${id}`, { method: "POST" }).catch(() => {});
         localStorage.clear();
         lastStatus = null;
         currentToken = null;
