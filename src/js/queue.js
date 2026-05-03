@@ -269,6 +269,12 @@ document.getElementById('queue-back-to-instructions-btn').addEventListener('clic
     await showScreen('instructions');
 });
 
+document.getElementById('queue-back-to-scanner-btn').addEventListener('click', async () => {
+    if (qValidityInterval) clearInterval(qValidityInterval);
+    await showScreen('scanner');
+    await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
+});
+
 document.getElementById('queue-submit-btn').addEventListener('click', async () => {
     const name = document.getElementById('queue-name-input').value.trim();
     if (!name) return;
