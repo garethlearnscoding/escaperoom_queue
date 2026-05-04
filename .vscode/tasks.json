@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Escape Room Queue Servers",
+      "dependsOn": [
+        "Serve App",
+        "Tailscale Funnel"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Serve App",
+      "type": "shell",
+      "command": "npx vite --host",
+      "isBackground": true,
+      "presentation": {
+        "group": "escape-room-queue-servers",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tailscale Funnel",
+      "type": "shell",
+      "command": "until curl -s -o /dev/null localhost:3517; do sleep 1; done; tailscale funnel 3517",
+      "isBackground": true,
+      "presentation": {
+        "group": "escape-room-queue-servers",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    }
+  ]
+}
