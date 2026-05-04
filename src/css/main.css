@@ -2,6 +2,7 @@
    main.css — Escape Room Queue (standalone page)
    Catppuccin design system
    ============================================================= */
+@import "tailwindcss";
 @import "@catppuccin/tailwindcss/mocha.css";
 
 * {
