@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta http-equiv="Cache-Control" content="no-store"/>
+    <title>Escape Room Queue</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=arrow_back,celebration,close,directions_run,hourglass_empty,location_on,qr_code_scanner,timer_off&display=block" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode"></script>  
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg"/>
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png"/>  
+    <script>
+        document.documentElement.classList.add(localStorage.getItem('funtasia-theme') || 'latte');
+    </script>
+  <script type="module" crossorigin src="/assets/main-D60FJv33.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-C-zeKa2F.css">
+</head>
+<body>
+    <div class="queue-container">
+        <div class="queue-header">
+            <h1 id="queue-modal-title">Escape Room Queue</h1>
+            <p id="queue-modal-subtitle">Check status or join the line</p>
+        </div>
+
+        <div class="queue-content" id="queue-modal-content">
+            <!-- Screen 1: Instructions -->
+            <div id="queue-screen-instructions" class="queue-screen flex">
+                <div id="queue-info-grid" class="bg-ctp-surface0 rounded-lg p-4 mb-6 w-full flex flex-col items-center border border-ctp-surface2">
+                    <div id="queue-info-stats" class="flex flex-row justify-around w-full">
+                        <div class="flex flex-col items-center">
+                            <p class="text-ctp-subtext0 text-xs font-bold uppercase tracking-wider mb-1 text-center">People</p>
+                            <p id="queue-info-people" class="text-ctp-mauve text-3xl font-bold">-</p>
+                        </div>
+                        <div class="w-px bg-ctp-surface2"></div>
+                        <div class="flex flex-col items-center">
+                            <p class="text-ctp-subtext0 text-xs font-bold uppercase tracking-wider mb-1 text-center">Wait Time</p>
+                            <p id="queue-info-wait" class="text-ctp-mauve text-3xl font-bold">-</p>
+                        </div>
+                    </div>
+                    <div id="queue-info-unavailable" class="hidden text-ctp-mauve text-xl font-bold py-2">Queue info unavailable</div>
+                </div>
+                <p class="text-center text-ctp-text mb-6">Visit the Escape Room booth and make payment before joining the virtual queue.</p>
+                <button id="queue-scan-btn" class="queue-action-btn w-full">Join Queue</button>
+            </div>
+
+            <!-- Screen 2: Scanner -->
+            <div id="queue-screen-scanner" class="queue-screen hidden">
+                <div id="queue_qrcode_scanner" class="qr-scanner-container mx-auto"></div>
+                <div id="queue-camera-loading" class="hidden items-center justify-center gap-3 text-ctp-mauve mt-6">
+                    <span class="material-symbols-outlined animate-[spin_2s_ease-in-out_infinite] text-[28px]">hourglass_empty</span>
+                    <span class="font-bold text-lg">Fetching Camera</span>
+                </div>
+                <p id="queue-scan-error" class="queue-error-text mt-4 text-center"></p>
+                <button id="queue-back-to-instructions-btn" class="flex items-center gap-2 text-ctp-mauve font-bold mt-4">
+                    <span class="material-symbols-outlined">arrow_back</span> Back
+                </button>
+            </div>
+
+            <!-- Screen 3: Join -->
+            <div id="queue-screen-join" class="queue-screen hidden">
+                <button id="queue-back-to-scanner-btn" class="self-start flex items-center gap-2 text-ctp-mauve font-bold mb-4">
+                    <span class="material-symbols-outlined">arrow_back</span> Back
+                </button>
+                <p id="queue-token-timer" class="text-center w-full mb-2 text-ctp-subtext1 font-bold"></p>
+                <p id="queue-qr-used-error" class="hidden text-center w-full mb-4 text-ctp-red font-bold">QR Code has already been used</p>
+                <input type="text" id="queue-name-input" class="queue-name-input w-full mb-6" placeholder="Your Name" autocomplete="off" />
+                <button id="queue-submit-btn" class="queue-action-btn mb-4">Join Queue</button>
+                <p id="queue-join-error" class="queue-error-text text-center w-full"></p>
+            </div>
+
+            <!-- Screen 4: Waiting -->
+            <div id="queue-screen-wait" class="queue-screen hidden">
+                <div class="bg-ctp-surface0 rounded-lg p-6 w-full mb-6 border-2 border-dashed border-ctp-surface2 text-center">
+                    <h2 id="queue-people-ahead" class="text-5xl font-bold text-ctp-mauve mb-2">--</h2>
+                    <p class="text-ctp-subtext1 text-sm mb-6">people ahead of you</p>
+                    <div class="flex justify-between mb-4"><span class="text-ctp-subtext1">Ticket Number</span><span id="queue-ticket-number" class="font-bold text-xl">--</span></div>
+                    <div class="flex justify-between"><span class="text-ctp-subtext1">Est. Wait</span><span id="queue-wait-time" class="font-bold text-xl">--</span></div>
+                </div>
+                <button id="queue-leave-btn" class="queue-leave-btn w-full">Leave Queue</button>
+            </div>
+
+            <!-- Screen 5: Notified -->
+            <div id="queue-screen-notified" class="queue-screen hidden">
+                <span class="material-symbols-outlined text-[64px] text-ctp-green mb-2 text-center block">celebration</span>
+                <h2 class="text-2xl font-bold text-center mb-6">It's your turn!</h2>
+                <p id="queue-countdown" class="text-ctp-red text-4xl font-bold text-center mb-4">05:00</p>
+                <div class="flex justify-between w-full bg-ctp-surface0 rounded-lg px-10 py-10 mb-8 border border-ctp-surface0">
+                    <span class="text-ctp-subtext1">Ticket Number</span>
+                    <span id="queue-notified-ticket" class="font-bold text-xl">--</span>
+                </div>
+                <button id="queue-leave-notified-btn" class="queue-leave-btn w-full">Leave Queue</button>
+            </div>
+
+            <!-- Screen 6: Expired -->
+            <div id="queue-screen-expired" class="queue-screen hidden text-center">
+                <span class="material-symbols-outlined text-[64px] text-ctp-subtext0 mb-4 block">timer_off</span>
+                <h2 class="text-xl font-bold mb-8">Session Expired</h2>
+                <button id="queue-back-to-start-btn" class="queue-action-btn">Back to start</button>
+            </div>
+
+            <!-- Screen 7: Served -->
+            <div id="queue-screen-served" class="queue-screen hidden text-center">
+                <span class="material-symbols-outlined text-[64px] text-ctp-green mb-4 block">directions_run</span>
+                <h2 class="text-xl font-bold mb-4">Hurry now, we are waiting for you!</h2>
+                <p class="text-ctp-subtext1 mb-8">Please head to the Escape Room booth immediately.</p>
+                <button id="queue-served-done-btn" class="queue-action-btn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-popup" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+</body>
+</html>
