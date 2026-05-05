@@ -82,6 +82,12 @@ async function showScreen(name) {
     });
     if (name === 'instructions') startGeneralPolling();
     else stopGeneralPolling();
+
+    if (name === 'notified') {
+        const id = localStorage.getItem("q_id");
+        const el = document.getElementById('queue-notified-ticket');
+        if (el) el.textContent = id ? `#${id}` : '--';
+    }
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────
@@ -117,9 +123,11 @@ async function pollGeneral() {
         const unavailable = document.getElementById('queue-info-unavailable');
         document.getElementById('queue-info-people').textContent = data.total;
         document.getElementById('queue-info-wait').textContent = data.total === 0 ? 'None' : `~${data.total * 15}m`;
+        document.getElementById('queue-info-stats')?.classList.add('flex');
         document.getElementById('queue-info-stats')?.classList.remove('hidden');
         unavailable?.classList.add('hidden');
     } catch {
+        document.getElementById('queue-info-stats')?.classList.remove('flex')
         document.getElementById('queue-info-stats')?.classList.add('hidden');
         document.getElementById('queue-info-unavailable')?.classList.remove('hidden');
     }
@@ -152,7 +160,7 @@ async function poll(id) {
     if (!id) return;
     try {
         const res = await fetch(
-            `${import.meta.env.VITE_API_BASE}/status?id=${id}&t=${Date.now()}`,
+            `${import.meta.env.VITE_API_BASE}/queue?id=${id}&t=${Date.now()}`,
             { cache: "no-store" }
         );
 
@@ -327,7 +335,11 @@ const leaveHandler = async () => {
     if (!confirm("Leave the queue?")) return;
     const id = localStorage.getItem("q_id");
     if (id) {
-        await fetch(`${import.meta.env.VITE_API_BASE}/leave?id=${id}`, { method: "POST" }).catch(() => {});
+        await fetch(`${import.meta.env.VITE_API_BASE}/queue`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "leave", id: parseInt(id) }),
+        }).catch(() => {});
     }
     cleanupSession();
     showScreen('instructions');
@@ -380,7 +392,7 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
     document.getElementById('queue-join-error').textContent = '';
 
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE}/join`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/queue`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: currentToken, name }),
