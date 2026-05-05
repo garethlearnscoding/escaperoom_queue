@@ -67,7 +67,8 @@ const UI = {
         get join()         { return document.getElementById('queue-screen-join'); },
         get wait()         { return document.getElementById('queue-screen-wait'); },
         get notified()     { return document.getElementById('queue-screen-notified'); },
-        get expired()      { return document.getElementById('queue-screen-expired'); }
+        get expired()      { return document.getElementById('queue-screen-expired'); },
+        get served()       { return document.getElementById('queue-screen-served'); }
     }
 };
 
@@ -109,7 +110,7 @@ function showToast(message) {
 // ── GENERAL POLLING (instructions screen only) ────────────────
 async function pollGeneral() {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE}/queue?t=${Date.now()}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/info?t=${Date.now()}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         const grid = document.getElementById('queue-info-grid');
@@ -174,6 +175,14 @@ async function poll(id) {
         const prevStatus = lastStatus;
         lastStatus = data.status;
 
+        if (data.status === 'served' || data.status === 'noshow') {
+            stopPolling();
+            cleanupSession();
+            fireNotification("Hurry now!", "We are waiting for you at the Escape Room booth.");
+            showScreen('served');
+            return;
+        }
+
         if (data.status === 'notified') {
             // Stop polling — everything runs client-side from here
             stopPolling();
@@ -194,10 +203,11 @@ async function poll(id) {
         } else {
             // Still waiting — update display and schedule next poll
             const queueNumber = data.queueNumber ?? data.id;
+            const peopleAhead = (data.position - 1);
+            document.getElementById('queue-people-ahead').textContent = peopleAhead;
             document.getElementById('queue-ticket-number').textContent = `#${queueNumber}`;
-            document.getElementById('queue-wait-position').textContent = `#${data.position}`;
             document.getElementById('queue-wait-time').textContent =
-                data.position === 1 ? 'Next up!' : `~${data.position * 15} mins`;
+                peopleAhead === 0 ? 'Next up!' : `~${data.position * 15} mins`;
             showScreen('wait');
             scheduleNextPoll(id, intervalForPosition(data.position));
         }
@@ -352,12 +362,8 @@ document.getElementById('queue-back-to-instructions-btn').addEventListener('clic
 document.getElementById('queue-back-to-scanner-btn')?.addEventListener('click', async () => {
     clearInterval(qValidityInterval);
     currentToken = null;
-    await showScreen('scanner');
-    await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
-});
-
-document.getElementById('queue-back-to-scanner-btn').addEventListener('click', async () => {
-    if (qValidityInterval) clearInterval(qValidityInterval);
+    const usedEl = document.getElementById('queue-qr-used-error');
+    if (usedEl) usedEl.classList.add('hidden');
     await showScreen('scanner');
     await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
 });
@@ -380,7 +386,17 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
             body: JSON.stringify({ token: currentToken, name }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Could not join queue.");
+        if (!res.ok) {
+            // Special case: QR already used — show above input, hide timer
+            if (data.error && data.error.includes("already been used")) {
+                clearInterval(qValidityInterval);
+                const timerEl = document.getElementById('queue-token-timer');
+                if (timerEl) timerEl.textContent = '';
+                const usedEl = document.getElementById('queue-qr-used-error');
+                if (usedEl) usedEl.classList.remove('hidden');
+            }
+            throw new Error(data.error || "Could not join queue.");
+        }
 
         localStorage.setItem("q_id", data.id);
         requestNotifPermission();
@@ -401,6 +417,10 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
 });
 
 document.getElementById('queue-leave-btn').addEventListener('click', leaveHandler);
+document.getElementById('queue-served-done-btn')?.addEventListener('click', () => {
+    cleanupSession();
+    showScreen('instructions');
+});
 document.getElementById('queue-leave-notified-btn').addEventListener('click', leaveHandler);
 
 document.getElementById('queue-back-to-start-btn').addEventListener('click', () => {

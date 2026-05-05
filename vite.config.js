@@ -14,15 +14,8 @@ export default defineConfig({
   },
   server: {
     port:3517,
-    allowedHosts: ["chunky-toaster.seagull-hippocampus.ts.net","broken-toaster.seagull-hippocampus.ts.net"],
+    allowedHosts: ["chunky-toaster.seagull-hippocampus.ts.net","broken-toaster.seagull-hippocampus.ts.net","client.njcfuntasia.com"],
     host:true,
-    proxy: {
-      '/queue-api': {
-        target: 'http://localhost:3517/',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/queue-api/, '/api'),
-      },
-    },
   },
   build: {
     rollupOptions: {
