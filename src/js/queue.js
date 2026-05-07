@@ -70,7 +70,8 @@ const UI = {
         get join()         { return document.getElementById('queue-screen-join'); },
         get wait()         { return document.getElementById('queue-screen-wait'); },
         get notified()     { return document.getElementById('queue-screen-notified'); },
-        get expired()      { return document.getElementById('queue-screen-expired'); }
+        get expired()      { return document.getElementById('queue-screen-expired'); },
+        get served()       { return document.getElementById('queue-screen-served'); }
     }
 };
 
@@ -82,6 +83,7 @@ async function showScreen(name) {
             el.classList.toggle('flex', k === name);
         }
     });
+<<<<<<< HEAD
 
     // Update subtitle and theme badge on instructions screen
     if (name === 'instructions') {
@@ -93,6 +95,15 @@ async function showScreen(name) {
 
     if (name === 'theme') {
         if (UI.subtitle) UI.subtitle.textContent = 'Choose your room to get started';
+=======
+    if (name === 'instructions') startGeneralPolling();
+    else stopGeneralPolling();
+
+    if (name === 'notified') {
+        const id = localStorage.getItem("q_id");
+        const el = document.getElementById('queue-notified-ticket');
+        if (el) el.textContent = id ? `#${id}` : '--';
+>>>>>>> b91abefbcbf10b1748c529d6106636485b301737
     }
 }
 
@@ -161,14 +172,16 @@ function showToast(message) {
 // Fetches combined queue count — unchanged per user preference
 async function pollGeneral() {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE}/queue?t=${Date.now()}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/info?t=${Date.now()}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         document.getElementById('queue-info-people').textContent = data.total;
         document.getElementById('queue-info-wait').textContent = data.total === 0 ? 'None' : `~${data.total * 15}m`;
+        document.getElementById('queue-info-stats')?.classList.add('flex');
         document.getElementById('queue-info-stats')?.classList.remove('hidden');
         document.getElementById('queue-info-unavailable')?.classList.add('hidden');
     } catch {
+        document.getElementById('queue-info-stats')?.classList.remove('flex')
         document.getElementById('queue-info-stats')?.classList.add('hidden');
         document.getElementById('queue-info-unavailable')?.classList.remove('hidden');
     }
@@ -220,6 +233,14 @@ async function poll(id) {
         const prevStatus = lastStatus;
         lastStatus = data.status;
 
+        if (data.status === 'served' || data.status === 'noshow') {
+            stopPolling();
+            cleanupSession();
+            fireNotification("Hurry now!", "We are waiting for you at the Escape Room booth.");
+            showScreen('served');
+            return;
+        }
+
         if (data.status === 'notified') {
             stopPolling();
             localStorage.setItem("q_notified_at", data.notifiedAt);
@@ -237,10 +258,11 @@ async function poll(id) {
             }
         } else {
             const queueNumber = data.queueNumber ?? data.id;
+            const peopleAhead = (data.position - 1);
+            document.getElementById('queue-people-ahead').textContent = peopleAhead;
             document.getElementById('queue-ticket-number').textContent = `#${queueNumber}`;
-            document.getElementById('queue-wait-position').textContent = `#${data.position}`;
             document.getElementById('queue-wait-time').textContent =
-                data.position === 1 ? 'Next up!' : `~${data.position * 15} mins`;
+                peopleAhead === 0 ? 'Next up!' : `~${data.position * 15} mins`;
             showScreen('wait');
             scheduleNextPoll(id, intervalForPosition(data.position));
         }
@@ -361,7 +383,11 @@ const leaveHandler = async () => {
         await fetch(`${import.meta.env.VITE_API_BASE}/queue`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
+<<<<<<< HEAD
             body: JSON.stringify({ action: "leave", id: parseInt(id, 10) }),
+=======
+            body: JSON.stringify({ action: "leave", id: parseInt(id) }),
+>>>>>>> b91abefbcbf10b1748c529d6106636485b301737
         }).catch(() => {});
     }
     cleanupSession();
@@ -392,9 +418,18 @@ document.getElementById('queue-back-to-instructions-btn').addEventListener('clic
     showScreen('instructions');
 });
 
+<<<<<<< HEAD
 document.getElementById('queue-back-to-scanner-btn').addEventListener('click', async () => {
     if (qValidityInterval) clearInterval(qValidityInterval);
     currentToken = null;
+=======
+// Back button on join screen → back to scanner
+document.getElementById('queue-back-to-scanner-btn')?.addEventListener('click', async () => {
+    clearInterval(qValidityInterval);
+    currentToken = null;
+    const usedEl = document.getElementById('queue-qr-used-error');
+    if (usedEl) usedEl.classList.add('hidden');
+>>>>>>> b91abefbcbf10b1748c529d6106636485b301737
     await showScreen('scanner');
     await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
 });
@@ -421,7 +456,17 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
             body: JSON.stringify({ token: currentToken, name, theme: selectedTheme }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Could not join queue.");
+        if (!res.ok) {
+            // Special case: QR already used — show above input, hide timer
+            if (data.error && data.error.includes("already been used")) {
+                clearInterval(qValidityInterval);
+                const timerEl = document.getElementById('queue-token-timer');
+                if (timerEl) timerEl.textContent = '';
+                const usedEl = document.getElementById('queue-qr-used-error');
+                if (usedEl) usedEl.classList.remove('hidden');
+            }
+            throw new Error(data.error || "Could not join queue.");
+        }
 
         localStorage.setItem("q_id", data.id);
         requestNotifPermission();
@@ -441,6 +486,10 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
 });
 
 document.getElementById('queue-leave-btn').addEventListener('click', leaveHandler);
+document.getElementById('queue-served-done-btn')?.addEventListener('click', () => {
+    cleanupSession();
+    showScreen('instructions');
+});
 document.getElementById('queue-leave-notified-btn').addEventListener('click', leaveHandler);
 
 document.getElementById('queue-back-to-start-btn').addEventListener('click', () => {
