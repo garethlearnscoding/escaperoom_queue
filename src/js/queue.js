@@ -83,27 +83,24 @@ async function showScreen(name) {
             el.classList.toggle('flex', k === name);
         }
     });
-<<<<<<< HEAD
 
     // Update subtitle and theme badge on instructions screen
-    if (name === 'instructions') {
+    if (name === 'theme') {
+        if (UI.subtitle) UI.subtitle.textContent = 'Choose your room to get started';
+    } else {
         updateThemeIndicator();
+    }
+
+    if (name === 'instructions') {
         startGeneralPolling();
     } else {
         stopGeneralPolling();
     }
 
-    if (name === 'theme') {
-        if (UI.subtitle) UI.subtitle.textContent = 'Choose your room to get started';
-=======
-    if (name === 'instructions') startGeneralPolling();
-    else stopGeneralPolling();
-
     if (name === 'notified') {
         const id = localStorage.getItem("q_id");
         const el = document.getElementById('queue-notified-ticket');
         if (el) el.textContent = id ? `#${id}` : '--';
->>>>>>> b91abefbcbf10b1748c529d6106636485b301737
     }
 }
 
@@ -114,8 +111,8 @@ function updateThemeIndicator() {
 
     if (selectedTheme) {
         const label = selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1);
-        const icon  = selectedTheme === 'helios' ? '☀' : '🎪';
-        badge.textContent = `${icon} ${label}`;
+        const icon  = selectedTheme === 'helios' ? 'rocket_launch' : 'festival';
+        badge.innerHTML = `<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px;">${icon}</span>${label}`;
         badge.className = `theme-badge theme-badge-${selectedTheme}`;
         indicator.classList.remove('hidden');
         if (UI.subtitle) UI.subtitle.textContent = `${label} — Check status or join the line`;
@@ -383,11 +380,7 @@ const leaveHandler = async () => {
         await fetch(`${import.meta.env.VITE_API_BASE}/queue`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-<<<<<<< HEAD
             body: JSON.stringify({ action: "leave", id: parseInt(id, 10) }),
-=======
-            body: JSON.stringify({ action: "leave", id: parseInt(id) }),
->>>>>>> b91abefbcbf10b1748c529d6106636485b301737
         }).catch(() => {});
     }
     cleanupSession();
@@ -418,18 +411,12 @@ document.getElementById('queue-back-to-instructions-btn').addEventListener('clic
     showScreen('instructions');
 });
 
-<<<<<<< HEAD
-document.getElementById('queue-back-to-scanner-btn').addEventListener('click', async () => {
-    if (qValidityInterval) clearInterval(qValidityInterval);
-    currentToken = null;
-=======
 // Back button on join screen → back to scanner
 document.getElementById('queue-back-to-scanner-btn')?.addEventListener('click', async () => {
-    clearInterval(qValidityInterval);
+    if (qValidityInterval) clearInterval(qValidityInterval);
     currentToken = null;
     const usedEl = document.getElementById('queue-qr-used-error');
     if (usedEl) usedEl.classList.add('hidden');
->>>>>>> b91abefbcbf10b1748c529d6106636485b301737
     await showScreen('scanner');
     await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
 });

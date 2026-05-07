@@ -14,7 +14,12 @@ export default defineConfig({
   },
   server: {
     port:3517,
-    allowedHosts: ["chunky-toaster.seagull-hippocampus.ts.net","broken-toaster.seagull-hippocampus.ts.net","client.njcfuntasia.com"],
+    allowedHosts: [
+      "chunky-toaster.seagull-hippocampus.ts.net",
+      "broken-toaster.seagull-hippocampus.ts.net",
+      "client.njcfuntasia.com",
+      "chunkytoasterclient.njcfuntasia.com"
+    ],
     host:true,
   },
   build: {

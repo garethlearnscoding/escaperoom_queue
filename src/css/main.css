@@ -242,7 +242,13 @@ body {
 }
 
 .theme-btn-icon {
-  font-size: 36px;
+  font-size: 40px;
+  line-height: 1;
+}
+
+/* Material Symbols inside theme buttons */
+.theme-btn .material-symbols-outlined {
+  font-size: 40px !important;
   line-height: 1;
 }
 
