@@ -20,12 +20,32 @@
     <div class="queue-container">
         <div class="queue-header">
             <h1 id="queue-modal-title">Escape Room Queue</h1>
-            <p id="queue-modal-subtitle">Check status or join the line</p>
+            <p id="queue-modal-subtitle">Choose your room to get started</p>
         </div>
 
         <div class="queue-content" id="queue-modal-content">
+
+            <!-- Screen 0: Theme Picker -->
+            <div id="queue-screen-theme" class="queue-screen hidden">
+                <p class="text-ctp-subtext0 text-xs font-bold uppercase tracking-wider mb-6 text-center">Choose your room</p>
+                <div class="theme-picker">
+                    <button id="theme-helios-btn" class="theme-btn theme-btn-helios">
+                        <span class="theme-btn-icon">☀</span>
+                        <span class="theme-btn-name">Helios</span>
+                    </button>
+                    <button id="theme-circus-btn" class="theme-btn theme-btn-circus">
+                        <span class="theme-btn-icon">🎪</span>
+                        <span class="theme-btn-name">Circus</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Screen 1: Instructions -->
-            <div id="queue-screen-instructions" class="queue-screen flex">
+            <div id="queue-screen-instructions" class="queue-screen hidden">
+                <div id="queue-theme-indicator" class="hidden w-full flex items-center justify-between mb-4">
+                    <span id="queue-theme-badge" class="theme-badge"></span>
+                    <button id="queue-change-theme-btn" class="theme-change-link">change room</button>
+                </div>
                 <div id="queue-info-grid" class="bg-ctp-surface0 rounded-lg p-4 mb-6 w-full flex flex-col items-center border border-ctp-surface2">
                     <div id="queue-info-stats" class="flex flex-row justify-around w-full">
                         <div class="flex flex-col items-center">

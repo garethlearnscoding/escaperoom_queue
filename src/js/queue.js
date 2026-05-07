@@ -9,6 +9,8 @@ let countdownTimer = null;
 let lastStatus = null;
 let currentToken = null;
 let qValidityInterval = null;
+let selectedTheme = localStorage.getItem("q_theme") || null;
+let pendingToken = null;  // URL token received before theme was chosen
 
 // ── SCANNER ───────────────────────────────────────────────────
 let html5QrCode = null;
@@ -62,6 +64,7 @@ const UI = {
     get title() { return document.getElementById('queue-modal-title'); },
     get subtitle() { return document.getElementById('queue-modal-subtitle'); },
     screens: {
+        get theme()        { return document.getElementById('queue-screen-theme'); },
         get instructions() { return document.getElementById('queue-screen-instructions'); },
         get scanner()      { return document.getElementById('queue-screen-scanner'); },
         get join()         { return document.getElementById('queue-screen-join'); },
@@ -79,9 +82,57 @@ async function showScreen(name) {
             el.classList.toggle('flex', k === name);
         }
     });
-    if (name === 'instructions') startGeneralPolling();
-    else stopGeneralPolling();
+
+    // Update subtitle and theme badge on instructions screen
+    if (name === 'instructions') {
+        updateThemeIndicator();
+        startGeneralPolling();
+    } else {
+        stopGeneralPolling();
+    }
+
+    if (name === 'theme') {
+        if (UI.subtitle) UI.subtitle.textContent = 'Choose your room to get started';
+    }
 }
+
+function updateThemeIndicator() {
+    const indicator = document.getElementById('queue-theme-indicator');
+    const badge = document.getElementById('queue-theme-badge');
+    if (!indicator || !badge) return;
+
+    if (selectedTheme) {
+        const label = selectedTheme.charAt(0).toUpperCase() + selectedTheme.slice(1);
+        const icon  = selectedTheme === 'helios' ? '☀' : '🎪';
+        badge.textContent = `${icon} ${label}`;
+        badge.className = `theme-badge theme-badge-${selectedTheme}`;
+        indicator.classList.remove('hidden');
+        if (UI.subtitle) UI.subtitle.textContent = `${label} — Check status or join the line`;
+    } else {
+        indicator.classList.add('hidden');
+        if (UI.subtitle) UI.subtitle.textContent = 'Choose your room to get started';
+    }
+}
+
+// ── THEME SELECTION ───────────────────────────────────────────
+function selectTheme(theme) {
+    selectedTheme = theme;
+    localStorage.setItem('q_theme', theme);
+
+    // If there's a pending URL token, validate it now that theme is known
+    if (pendingToken) {
+        const t = pendingToken;
+        pendingToken = null;
+        validateToken(t);
+        return;
+    }
+
+    showScreen('instructions');
+}
+
+document.getElementById('theme-helios-btn').addEventListener('click', () => selectTheme('helios'));
+document.getElementById('theme-circus-btn').addEventListener('click', () => selectTheme('circus'));
+document.getElementById('queue-change-theme-btn').addEventListener('click', () => showScreen('theme'));
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────
 function requestNotifPermission() {
@@ -107,17 +158,16 @@ function showToast(message) {
 }
 
 // ── GENERAL POLLING (instructions screen only) ────────────────
+// Fetches combined queue count — unchanged per user preference
 async function pollGeneral() {
     try {
         const res = await fetch(`${import.meta.env.VITE_API_BASE}/queue?t=${Date.now()}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
-        const grid = document.getElementById('queue-info-grid');
-        const unavailable = document.getElementById('queue-info-unavailable');
         document.getElementById('queue-info-people').textContent = data.total;
         document.getElementById('queue-info-wait').textContent = data.total === 0 ? 'None' : `~${data.total * 15}m`;
         document.getElementById('queue-info-stats')?.classList.remove('hidden');
-        unavailable?.classList.add('hidden');
+        document.getElementById('queue-info-unavailable')?.classList.add('hidden');
     } catch {
         document.getElementById('queue-info-stats')?.classList.add('hidden');
         document.getElementById('queue-info-unavailable')?.classList.remove('hidden');
@@ -133,9 +183,6 @@ function startGeneralPolling() {
 function stopGeneralPolling() { clearInterval(generalPollTimer); }
 
 // ── PERSONAL POLLING (waiting status only) ────────────────────
-// Polls slower the further back in queue the user is.
-// Stops completely once notified — countdown runs locally.
-
 function intervalForPosition(position) {
     if (position <= 2)  return 2000;
     if (position <= 5)  return 5000;
@@ -151,7 +198,7 @@ async function poll(id) {
     if (!id) return;
     try {
         const res = await fetch(
-            `${import.meta.env.VITE_API_BASE}/status?id=${id}&t=${Date.now()}`,
+            `${import.meta.env.VITE_API_BASE}/queue?id=${id}&t=${Date.now()}`,
             { cache: "no-store" }
         );
 
@@ -165,7 +212,6 @@ async function poll(id) {
         }
 
         if (!res.ok) {
-            // Transient error — retry at current interval
             scheduleNextPoll(id, 3000);
             return;
         }
@@ -175,7 +221,6 @@ async function poll(id) {
         lastStatus = data.status;
 
         if (data.status === 'notified') {
-            // Stop polling — everything runs client-side from here
             stopPolling();
             localStorage.setItem("q_notified_at", data.notifiedAt);
 
@@ -183,7 +228,6 @@ async function poll(id) {
                 fireNotification("It's your turn!", "Head to the escape room booth. You have 5 minutes.");
             }
 
-            // Check if already expired
             const notifiedMs = new Date(data.notifiedAt).getTime();
             if (Date.now() - notifiedMs >= FIVE_MINUTES) {
                 handleExpired();
@@ -192,7 +236,6 @@ async function poll(id) {
                 startCountdown(data.notifiedAt);
             }
         } else {
-            // Still waiting — update display and schedule next poll
             const queueNumber = data.queueNumber ?? data.id;
             document.getElementById('queue-ticket-number').textContent = `#${queueNumber}`;
             document.getElementById('queue-wait-position').textContent = `#${data.position}`;
@@ -202,7 +245,6 @@ async function poll(id) {
             scheduleNextPoll(id, intervalForPosition(data.position));
         }
     } catch {
-        // Network blip — retry soon
         scheduleNextPoll(id, 5000);
     }
 }
@@ -215,14 +257,13 @@ function scheduleNextPoll(id, ms) {
 function startPolling(id) {
     lastStatus = null;
     stopPolling();
-    poll(id); // immediate first call
+    poll(id);
 }
 
-// ── COUNTDOWN (runs entirely client-side after notified) ──────
+// ── COUNTDOWN ─────────────────────────────────────────────────
 function startCountdown(notifiedAt) {
     if (countdownTimer) clearInterval(countdownTimer);
 
-    // Accept ISO string or ms number
     const notifiedMs = typeof notifiedAt === 'string'
         ? new Date(notifiedAt).getTime()
         : notifiedAt;
@@ -276,7 +317,6 @@ function validateToken(token) {
         document.getElementById('queue-join-error').textContent = '';
         document.getElementById('queue-submit-btn').disabled = false;
         startValidityTimer(Math.floor((TWO_MINUTES - age) / 1000));
-        // Clean token from URL bar without reloading
         window.history.replaceState({}, '', window.location.pathname);
         showScreen('join');
     } catch {
@@ -309,6 +349,7 @@ function cleanupSession() {
     if (qValidityInterval) { clearInterval(qValidityInterval); qValidityInterval = null; }
     localStorage.removeItem("q_id");
     localStorage.removeItem("q_notified_at");
+    // NOTE: q_theme is intentionally NOT cleared — user stays in same room
     lastStatus = null;
     currentToken = null;
 }
@@ -317,22 +358,25 @@ const leaveHandler = async () => {
     if (!confirm("Leave the queue?")) return;
     const id = localStorage.getItem("q_id");
     if (id) {
-        await fetch(`${import.meta.env.VITE_API_BASE}/leave?id=${id}`, { method: "POST" }).catch(() => {});
+        await fetch(`${import.meta.env.VITE_API_BASE}/queue`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "leave", id: parseInt(id, 10) }),
+        }).catch(() => {});
     }
     cleanupSession();
     showScreen('instructions');
 };
 
-// ── VISIBILITY API — pause polling when phone/tab is hidden ───
+// ── VISIBILITY API ────────────────────────────────────────────
 document.addEventListener("visibilitychange", () => {
     const id = localStorage.getItem("q_id");
     const notifiedAt = localStorage.getItem("q_notified_at");
-    if (!id || notifiedAt) return; // don't touch countdown, only polling
+    if (!id || notifiedAt) return;
 
     if (document.hidden) {
-        stopPolling(); // phone locked / tab hidden — stop polling
+        stopPolling();
     } else {
-        // Came back — poll immediately then resume
         poll(id);
     }
 });
@@ -348,16 +392,9 @@ document.getElementById('queue-back-to-instructions-btn').addEventListener('clic
     showScreen('instructions');
 });
 
-// Back button on join screen → back to scanner
-document.getElementById('queue-back-to-scanner-btn')?.addEventListener('click', async () => {
-    clearInterval(qValidityInterval);
-    currentToken = null;
-    await showScreen('scanner');
-    await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
-});
-
 document.getElementById('queue-back-to-scanner-btn').addEventListener('click', async () => {
     if (qValidityInterval) clearInterval(qValidityInterval);
+    currentToken = null;
     await showScreen('scanner');
     await startScanner((text) => handleScannedQR(text), 'queue_qrcode_scanner');
 });
@@ -368,16 +405,20 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
         document.getElementById('queue-join-error').textContent = "Please enter your name.";
         return;
     }
+    if (!selectedTheme) {
+        document.getElementById('queue-join-error').textContent = "No theme selected. Please go back and choose a room.";
+        return;
+    }
 
     const btn = document.getElementById('queue-submit-btn');
     btn.disabled = true;
     document.getElementById('queue-join-error').textContent = '';
 
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE}/join`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE}/queue`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: currentToken, name }),
+            body: JSON.stringify({ token: currentToken, name, theme: selectedTheme }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not join queue.");
@@ -386,7 +427,6 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
         requestNotifPermission();
 
         if (data.status === 'notified') {
-            // First in queue — skip polling, go straight to countdown
             localStorage.setItem("q_notified_at", data.notifiedAt);
             showScreen('notified');
             startCountdown(data.notifiedAt);
@@ -405,7 +445,9 @@ document.getElementById('queue-leave-notified-btn').addEventListener('click', le
 
 document.getElementById('queue-back-to-start-btn').addEventListener('click', () => {
     cleanupSession();
-    showScreen('instructions');
+    // Go to instructions if theme already chosen, otherwise theme picker
+    if (selectedTheme) showScreen('instructions');
+    else showScreen('theme');
 });
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -414,10 +456,8 @@ document.getElementById('queue-back-to-start-btn').addEventListener('click', () 
     const savedId = localStorage.getItem("q_id");
 
     if (savedNotifiedAt) {
-        // User was notified — resume countdown locally, no API call needed
         const notifiedMs = new Date(savedNotifiedAt).getTime();
         if (Date.now() - notifiedMs >= FIVE_MINUTES) {
-            // Already expired while away
             handleExpired();
         } else {
             showScreen('notified');
@@ -427,7 +467,6 @@ document.getElementById('queue-back-to-start-btn').addEventListener('click', () 
     }
 
     if (savedId) {
-        // Returning user still waiting — resume polling
         showScreen('wait');
         startPolling(savedId);
         return;
@@ -437,10 +476,21 @@ document.getElementById('queue-back-to-start-btn').addEventListener('click', () 
     const params = new URLSearchParams(window.location.search);
     const token = params.get("t");
     if (token) {
-        validateToken(token);
+        window.history.replaceState({}, '', window.location.pathname);
+        if (selectedTheme) {
+            validateToken(token);
+        } else {
+            // Must pick theme first — store token for after selection
+            pendingToken = token;
+            showScreen('theme');
+        }
         return;
     }
 
-    // Fresh visit
-    showScreen('instructions');
+    // Fresh visit — show theme picker, or go straight to instructions if theme saved
+    if (selectedTheme) {
+        showScreen('instructions');
+    } else {
+        showScreen('theme');
+    }
 })();
