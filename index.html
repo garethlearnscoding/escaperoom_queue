@@ -6,26 +6,46 @@
     <meta http-equiv="Cache-Control" content="no-store"/>
     <title>Escape Room Queue</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=arrow_back,celebration,close,directions_run,hourglass_empty,location_on,qr_code_scanner,timer_off&display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=arrow_back,celebration,close,directions_run,festival,hourglass_empty,qr_code_scanner,rocket_launch,timer_off&display=block" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>  
     <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg"/>
     <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png"/>  
     <script>
         document.documentElement.classList.add(localStorage.getItem('funtasia-theme') || 'latte');
     </script>
-  <script type="module" crossorigin src="/assets/main-D60FJv33.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-C-zeKa2F.css">
+  <script type="module" crossorigin src="/assets/main-XfZ5dvr1.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-BQN0c6J3.css">
 </head>
 <body>
     <div class="queue-container">
         <div class="queue-header">
             <h1 id="queue-modal-title">Escape Room Queue</h1>
-            <p id="queue-modal-subtitle">Check status or join the line</p>
+            <p id="queue-modal-subtitle">Choose your room to get started</p>
         </div>
 
         <div class="queue-content" id="queue-modal-content">
+
+            <!-- Screen 0: Theme Picker -->
+            <div id="queue-screen-theme" class="queue-screen hidden">
+                <p class="text-ctp-subtext0 text-xs font-bold uppercase tracking-wider mb-6 text-center">Choose your room</p>
+                <div class="theme-picker">
+                    <button id="theme-helios-btn" class="theme-btn theme-btn-helios">
+                        <span class="material-symbols-outlined text-[10px]">rocket_launch</span>
+                        <span class="theme-btn-name">Helios</span>
+                    </button>
+                    <button id="theme-circus-btn" class="theme-btn theme-btn-circus">
+                        <span class="material-symbols-outlined text-[10px]">festival</span>
+                        <span class="theme-btn-name">Circus</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Screen 1: Instructions -->
-            <div id="queue-screen-instructions" class="queue-screen flex">
+            <div id="queue-screen-instructions" class="queue-screen hidden">
+                <div id="queue-theme-indicator" class="hidden w-full flex items-center justify-between mb-4">
+                    <span id="queue-theme-badge" class="theme-badge"></span>
+                    <button id="queue-change-theme-btn" class="theme-change-link">change room</button>
+                </div>
                 <div id="queue-info-grid" class="bg-ctp-surface0 rounded-lg p-4 mb-6 w-full flex flex-col items-center border border-ctp-surface2">
                     <div id="queue-info-stats" class="flex flex-row justify-around w-full">
                         <div class="flex flex-col items-center">
