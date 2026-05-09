@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="/src/css/main.css"/>
     <link href="/src/css/input.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=arrow_back,celebration,close,directions_run,festival,hourglass_empty,qr_code_scanner,rocket_launch,timer_off&display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&icon_names=arrow_back,celebration,close,directions_run,festival,hourglass_empty,person_off,qr_code_scanner,rocket_launch,timer_off&display=block" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>  
     <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg"/>
-    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png"/>  
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png"/>
     <script>
         document.documentElement.classList.add(localStorage.getItem('funtasia-theme') || 'latte');
     </script>
@@ -121,10 +121,10 @@
 
             <!-- Screen 7: Served -->
             <div id="queue-screen-served" class="queue-screen hidden text-center">
-                <span class="material-symbols-outlined text-[64px] text-ctp-green mb-4 block">directions_run</span>
-                <h2 class="text-xl font-bold mb-4">Hurry now, we are waiting for you!</h2>
-                <p class="text-ctp-subtext1 mb-8">Please head to the Escape Room booth immediately.</p>
-                <button id="queue-served-done-btn" class="queue-action-btn">Done</button>
+                <span id="queue-served-icon" class="material-symbols-outlined text-[64px] text-ctp-green mb-4 block">directions_run</span>
+                <h2 id="queue-served-title" class="text-xl font-bold mb-4">Hurry now, we are waiting for you!</h2>
+                <p id="queue-served-desc" class="text-ctp-subtext1 mb-8">Please head to the Escape Room booth immediately.</p>
+                <button id="queue-served-done-btn" class="queue-action-btn">Back to Home</button>
             </div>
         </div>
     </div>

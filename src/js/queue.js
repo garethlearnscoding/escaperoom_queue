@@ -214,10 +214,9 @@ async function poll(id) {
 
         if (res.status === 404) {
             stopPolling();
-            localStorage.removeItem("q_id");
-            localStorage.removeItem("q_notified_at");
+            cleanupSession();
             showToast("Your session has expired or been removed.");
-            showScreen('instructions');
+            showScreen('theme');
             return;
         }
 
@@ -232,14 +231,36 @@ async function poll(id) {
 
         if (data.status === 'served' || data.status === 'noshow') {
             stopPolling();
+            const wasNoshow = data.status === 'noshow';
             cleanupSession();
-            fireNotification("Hurry now!", "We are waiting for you at the Escape Room booth.");
+            
+            const titleEl = document.getElementById('queue-served-title');
+            const descEl = document.getElementById('queue-served-desc');
+            const iconEl = document.getElementById('queue-served-icon');
+
+            if (wasNoshow) {
+                if (titleEl) titleEl.textContent = "Removed from Queue";
+                if (descEl) descEl.textContent = "You were marked as a no-show. Please visit the booth if this was a mistake.";
+                if (iconEl) {
+                    iconEl.textContent = "person_off";
+                    iconEl.classList.remove('text-ctp-green');
+                    iconEl.classList.add('text-ctp-red');
+                }
+            } else {
+                if (titleEl) titleEl.textContent = "Enjoy your game!";
+                if (descEl) descEl.textContent = "Have a great time in the Escape Room!";
+                if (iconEl) {
+                    iconEl.textContent = "celebration";
+                    iconEl.classList.remove('text-ctp-red');
+                    iconEl.classList.add('text-ctp-green');
+                }
+            }
+
             showScreen('served');
             return;
         }
 
         if (data.status === 'notified') {
-            stopPolling();
             localStorage.setItem("q_notified_at", data.notifiedAt);
 
             if (prevStatus !== 'notified') {
@@ -248,10 +269,13 @@ async function poll(id) {
 
             const notifiedMs = new Date(data.notifiedAt).getTime();
             if (Date.now() - notifiedMs >= FIVE_MINUTES) {
+                stopPolling();
                 handleExpired();
             } else {
                 showScreen('notified');
                 startCountdown(data.notifiedAt);
+                // Keep polling at 3s so we detect served/noshow from admin
+                scheduleNextPoll(id, 3000);
             }
         } else {
             const queueNumber = data.queueNumber ?? data.id;
@@ -368,7 +392,8 @@ function cleanupSession() {
     if (qValidityInterval) { clearInterval(qValidityInterval); qValidityInterval = null; }
     localStorage.removeItem("q_id");
     localStorage.removeItem("q_notified_at");
-    // NOTE: q_theme is intentionally NOT cleared — user stays in same room
+    localStorage.removeItem("q_theme");
+    selectedTheme = null;
     lastStatus = null;
     currentToken = null;
 }
@@ -384,18 +409,18 @@ const leaveHandler = async () => {
         }).catch(() => {});
     }
     cleanupSession();
-    showScreen('instructions');
+    showScreen('theme');
 };
 
 // ── VISIBILITY API ────────────────────────────────────────────
 document.addEventListener("visibilitychange", () => {
     const id = localStorage.getItem("q_id");
-    const notifiedAt = localStorage.getItem("q_notified_at");
-    if (!id || notifiedAt) return;
+    if (!id) return;
 
     if (document.hidden) {
         stopPolling();
     } else {
+        // Resume polling whether waiting or notified
         poll(id);
     }
 });
@@ -475,15 +500,13 @@ document.getElementById('queue-submit-btn').addEventListener('click', async () =
 document.getElementById('queue-leave-btn').addEventListener('click', leaveHandler);
 document.getElementById('queue-served-done-btn')?.addEventListener('click', () => {
     cleanupSession();
-    showScreen('instructions');
+    showScreen('theme');
 });
 document.getElementById('queue-leave-notified-btn').addEventListener('click', leaveHandler);
 
 document.getElementById('queue-back-to-start-btn').addEventListener('click', () => {
     cleanupSession();
-    // Go to instructions if theme already chosen, otherwise theme picker
-    if (selectedTheme) showScreen('instructions');
-    else showScreen('theme');
+    showScreen('theme');
 });
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -498,6 +521,8 @@ document.getElementById('queue-back-to-start-btn').addEventListener('click', () 
         } else {
             showScreen('notified');
             startCountdown(savedNotifiedAt);
+            // Poll in background to detect served/noshow from admin
+            if (savedId) startPolling(savedId);
         }
         return;
     }
